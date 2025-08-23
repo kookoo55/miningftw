@@ -23,16 +23,6 @@ README.md
 requirements.txt
 ```
 
-## Quick start
-```bash
-cd miningftw
-git init
-git add .
-git commit -m "Initial import"
-git remote add origin <YOUR_REPO_URL>
-git push -u origin main
-```
-
 ## Notes
 - Columns are unit-annotated: BTC hashrate in TH/s, ETC hashrate in GH/s, power in W.
 - If you keep two working versions locally (v1/v2), treat `data/*_v1.csv` as previous and `data/*_v2.csv` as latest; this starter uses *canonical* files (`*_miner_sheet.csv` as latest) to keep the repo simple.

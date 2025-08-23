@@ -1,0 +1,48 @@
+name: Commit data ZIP to repo
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - "data/**/*.csv"
+      - ".github/workflows/commit-data-zip.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  package-and-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure zip is available
+        run: sudo apt-get update && sudo apt-get install -y zip
+
+      - name: Package CSVs
+        run: |
+          mkdir -p data/packages
+          # Always write to the same path to avoid repo bloat
+          (cd data && zip -r ../data/packages/data_csvs.zip . -i "**/*.csv")
+          ls -lah data/packages
+
+      - name: Create PR with ZIP
+        uses: peter-evans/create-pull-request@v6
+        with:
+          add-paths: |
+            data/packages/data_csvs.zip
+          branch: bot/commit-data-zip
+          title: "chore: update data CSV ZIP"
+          commit-message: "chore: update data CSV ZIP (auto)"
+          body: |
+            This PR was auto-created by the workflow to commit the latest `data/**/*.csv` bundle:
+            - `data/packages/data_csvs.zip`
+          labels: |
+            automation
+            data
+          delete-branch: true

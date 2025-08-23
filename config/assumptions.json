@@ -1,0 +1,38 @@
+{
+  "use_default": true,
+  "start_month": "2025-10",
+  "end_month": "2030-12",
+  "winter_months": [
+    10,
+    11,
+    12,
+    1,
+    2,
+    3,
+    4
+  ],
+  "sell_lag_months": 12,
+  "pool_fee_pct": 1.0,
+  "elec_rate_usd_per_kwh": 0.081,
+  "annual_power_pct": 0.0,
+  "btc": {
+    "base_price_usd": 125000.0,
+    "annual_price_pct": 0.0,
+    "annual_difficulty_pct": 0.0,
+    "baseline_coins_per_day": 0.000576,
+    "units": 6,
+    "power_w_each": 3510.0,
+    "hash_unit": "TH/s",
+    "source_csv": "data/btc_miner_sheet.csv"
+  },
+  "etc": {
+    "base_price_usd": 24.0,
+    "annual_price_pct": 0.0,
+    "annual_difficulty_pct": 0.0,
+    "baseline_coins_per_day": 1.16917,
+    "units": 20,
+    "power_w_each": 370.0,
+    "hash_unit": "GH/s",
+    "source_csv": "data/etc_miner_sheet.csv"
+  }
+}

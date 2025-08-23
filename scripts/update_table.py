@@ -68,9 +68,6 @@ def main():
         print(f"ERROR: no rows matched {args.key} == '{args.model}'", file=sys.stderr)
         sys.exit(5)
 
-    # Shift latest -> v1 backup
-    shutil.copyfile(path_latest, path_prev)
-
     # Apply updates
     for col, val in updates.items():
         df.loc[mask, col] = df.loc[mask, col].apply(lambda _: coerce_value(df[col], val))

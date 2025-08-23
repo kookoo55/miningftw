@@ -1,19 +1,15 @@
-name: Commit data ZIP + manifest
+name: Auto publish data snapshot
 
 on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - "data/**/*.csv"
-      - ".github/workflows/commit-data-zip.yml"
-  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes; adjust as you like
+  workflow_dispatch:         # still lets you run it manually if needed
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
-  package-and-pr:
+  build-and-commit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,70 +20,65 @@ jobs:
       - name: Ensure deps
         run: |
           sudo apt-get update && sudo apt-get install -y zip
-          python -V
-          python - << 'PY'
-          import sys
-          print("Python OK", sys.version)
-          PY
+          python3 -V
 
       - name: Package CSVs
         run: |
           mkdir -p data/packages
-          (cd data && zip -r ../data/packages/data_csvs.zip . -i "**/*.csv")
-          ls -lah data/packages
+          (cd data && zip -r ../data/packages/data_csvs.zip . -i "**/*.csv" || true)
+          ls -lah data/packages || true
 
-      - name: Build manifest.json from CSVs
+      - name: Build manifest.json and snapshot (markdown)
         run: |
-          python - << 'PY'
-          import csv, json, hashlib, os, glob
+          python3 - << 'PY'
+          import csv, json, glob, hashlib
           from pathlib import Path
-
-          out_dir = Path("data/packages")
-          out_dir.mkdir(parents=True, exist_ok=True)
+          pkg = Path("data/packages"); pkg.mkdir(parents=True, exist_ok=True)
+          rep = Path("reports");       rep.mkdir(parents=True, exist_ok=True)
           manifest = {"files": []}
-
-          for path in glob.glob("data/**/*.csv", recursive=True):
-            # compute sha256 and basic schema
-            sha = hashlib.sha256()
+          md = ["# Data Snapshot", ""]
+          for path in sorted(glob.glob("data/**/*.csv", recursive=True)):
+            h = hashlib.sha256()
             with open(path, "rb") as f:
               for chunk in iter(lambda: f.read(65536), b""):
-                sha.update(chunk)
-            digest = sha.hexdigest()
-
-            rows = []
+                h.update(chunk)
+            sha = h.hexdigest()
+            headers = []; samples = []; rows = 0
             with open(path, newline="", encoding="utf-8") as f:
-              reader = csv.reader(f)
-              hdr = next(reader, [])
-              cnt = 0
-              for r in reader:
-                if cnt < 3: rows.append(r)
-                cnt += 1
-
+              rdr = csv.reader(f)
+              headers = next(rdr, [])
+              for r in rdr:
+                rows += 1
+                if len(samples) < 5: samples.append(r)
             manifest["files"].append({
-              "path": path,
-              "sha256": digest,
-              "headers": hdr,
-              "row_count": cnt,
-              "sample_rows": rows
+              "path": path, "sha256": sha, "headers": headers,
+              "row_count": rows, "sample_rows": samples
             })
-
-          with open(out_dir/"manifest.json", "w", encoding="utf-8") as f:
-            json.dump(manifest, f, indent=2)
-          print("Wrote", out_dir/"manifest.json")
+            # append to markdown snapshot
+            md.append(f"## `{path}`"); md.append("")
+            md.append(f"- Rows: **{rows}**")
+            md.append(f"- SHA256: `{sha}`"); md.append("")
+            md.append("**Headers**"); md.append("")
+            md.append("`" + ", ".join(headers) + "`"); md.append("")
+            md.append("**First 5 rows**"); md.append("")
+            md.append("| " + " | ".join(headers) + " |")
+            md.append("|" + "|".join(["---"]*len(headers)) + "|")
+            for r in samples:
+              md.append("| " + " | ".join(r) + " |")
+            md.append("")
+          (pkg/"manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+          (rep/"DATA_SNAPSHOT.md").write_text("\n".join(md), encoding="utf-8")
+          print("Wrote", pkg/"manifest.json", "and", rep/"DATA_SNAPSHOT.md")
           PY
-          cat data/packages/manifest.json || true
 
-      - name: Create PR with ZIP + manifest
-        uses: peter-evans/create-pull-request@v6
+      - name: Commit to main
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          add-paths: |
+          commit_message: "chore: auto-publish data snapshot"
+          commit_user_name: data-bot
+          commit_user_email: actions@github.com
+          branch: main
+          file_pattern: |
             data/packages/data_csvs.zip
             data/packages/manifest.json
-          branch: bot/commit-data-zip
-          title: "chore: update data bundle (zip + manifest)"
-          commit-message: "chore: update data bundle (zip + manifest, auto)"
-          body: |
-            Auto-created PR that bundles CSVs and publishes a machine-readable manifest.
-            - `data/packages/data_csvs.zip`
-            - `data/packages/manifest.json` (headers, row counts, samples, sha256)
-          delete-branch: true
+            reports/DATA_SNAPSHOT.md

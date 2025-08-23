@@ -1,0 +1,42 @@
+name: data-update-pr
+on:
+  workflow_dispatch:
+    inputs:
+      sheet: { description: "btc or etc", required: true, default: "btc" }
+      model: { description: "row key (e.g., S21)", required: true }
+      set:   { description: 'e.g., power (W)=3510, hashrate (TH/s)=245', required: true }
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-data-and-open-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r requirements.txt
+      - name: Apply update
+        run: |
+          python scripts/update_table.py \
+            --sheet "${{ github.event.inputs.sheet }}" \
+            --model "${{ github.event.inputs.model }}" \
+            --set   "${{ github.event.inputs.set }}"
+      - name: Rebuild reports
+        run: python scripts/run_profitability.py
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Data update: ${{ github.event.inputs.sheet }} | model=${{ github.event.inputs.model }}"
+          branch: "bot/data-update/${{ github.run_id }}"
+          title: "Data update: ${{ github.event.inputs.sheet }} | model=${{ github.event.inputs.model }}"
+          body: |
+            Automated update triggered via workflow_dispatch.
+            Set: ${{ github.event.inputs.set }}
+            Sheet: ${{ github.event.inputs.sheet }}
+            Model: ${{ github.event.inputs.model }}
+          add-paths: |
+            data/**
+            reports/**

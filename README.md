@@ -1,4 +1,4 @@
-# miningftw
+# ⛏️🔌⛏️ miningftw ⛏️🔌⛏️
 
 Forecasting & analysis for a winter-only BTC/ETC mining setup. It does not support calculations for BTC & ETC mining together. 
 This repo stores canonical miner sheets, a monthly model generator, and CI that snapshots data for easy verification.

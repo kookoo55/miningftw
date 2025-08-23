@@ -1,0 +1,24 @@
+period:
+  start: 2025-10-01
+  end: 2026-04-30
+
+pools:
+  fee_pct: 0.01
+
+c6:
+  count: 1
+  tank_w: 850
+  dry_cooler_w: 1000
+
+tariff:
+  provider: jackson_emc
+  seasons:
+    winter: [10,11,12,1,2,3,4]
+    summer: [5,6,7,8,9]
+
+btc_price:
+  mode: flat
+  flat_usd: 125000
+# mode: ramp
+# start_usd: 125000
+# end_usd: 150000

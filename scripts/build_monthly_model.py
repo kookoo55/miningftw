@@ -173,7 +173,7 @@ if __name__ == "__main__":
         raise SystemExit(f"Missing assumptions file: {conf_path}")
     assumptions = json.loads(conf_path.read_text())
     df = build_monthly_model(assumptions, repo_root)
-    out = repo_root / "data" / "monthly_model_2025_2030_full.csv"
+    out = repo_root / "data" / "monthly_model_2025_2030.csv"
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out, index=False)
     print(f"Wrote {out}")

@@ -1,4 +1,4 @@
-name: Commit data ZIP to repo
+name: Commit data ZIP + manifest
 
 on:
   push:
@@ -21,8 +21,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure zip is available
-        run: sudo apt-get update && sudo apt-get install -y zip
+      - name: Ensure deps
+        run: |
+          sudo apt-get update && sudo apt-get install -y zip
+          python -V
+          python - << 'PY'
+          import sys
+          print("Python OK", sys.version)
+          PY
 
       - name: Package CSVs
         run: |
@@ -30,14 +36,58 @@ jobs:
           (cd data && zip -r ../data/packages/data_csvs.zip . -i "**/*.csv")
           ls -lah data/packages
 
-      - name: Create PR with ZIP
+      - name: Build manifest.json from CSVs
+        run: |
+          python - << 'PY'
+          import csv, json, hashlib, os, glob
+          from pathlib import Path
+
+          out_dir = Path("data/packages")
+          out_dir.mkdir(parents=True, exist_ok=True)
+          manifest = {"files": []}
+
+          for path in glob.glob("data/**/*.csv", recursive=True):
+            # compute sha256 and basic schema
+            sha = hashlib.sha256()
+            with open(path, "rb") as f:
+              for chunk in iter(lambda: f.read(65536), b""):
+                sha.update(chunk)
+            digest = sha.hexdigest()
+
+            rows = []
+            with open(path, newline="", encoding="utf-8") as f:
+              reader = csv.reader(f)
+              hdr = next(reader, [])
+              cnt = 0
+              for r in reader:
+                if cnt < 3: rows.append(r)
+                cnt += 1
+
+            manifest["files"].append({
+              "path": path,
+              "sha256": digest,
+              "headers": hdr,
+              "row_count": cnt,
+              "sample_rows": rows
+            })
+
+          with open(out_dir/"manifest.json", "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2)
+          print("Wrote", out_dir/"manifest.json")
+          PY
+          cat data/packages/manifest.json || true
+
+      - name: Create PR with ZIP + manifest
         uses: peter-evans/create-pull-request@v6
         with:
           add-paths: |
             data/packages/data_csvs.zip
+            data/packages/manifest.json
           branch: bot/commit-data-zip
-          title: "chore: update data CSV ZIP"
-          commit-message: "chore: update data CSV ZIP (auto)"
+          title: "chore: update data bundle (zip + manifest)"
+          commit-message: "chore: update data bundle (zip + manifest, auto)"
           body: |
-            Auto-created PR to bundle `data/**/*.csv` as `data/packages/data_csvs.zip`.
+            Auto-created PR that bundles CSVs and publishes a machine-readable manifest.
+            - `data/packages/data_csvs.zip`
+            - `data/packages/manifest.json` (headers, row counts, samples, sha256)
           delete-branch: true

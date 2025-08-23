@@ -1,5 +1,5 @@
-model,hashrate (TH/s),power (W),hashrate (TH/s)/power (W),price,hashrate (TH/s),x4 cost,x6 cost,x4 hashrate (TH/s),x6 hashrate (TH/s),Unnamed: 10,link
-s21+,235,3564.0,0.06593714927048261,3349,14.251063829787235,13396.0,,940.0,,,https://asicmarketplace.com/product/bitmain-antminer-s21-plus-bitcoin-miner/
+model,hashrate (TH/s),power (W),hashrate (TH/s)/power (W),price,hashrate (TH/s).1,x4 cost,x6 cost,x4 hashrate (TH/s),x6 hashrate (TH/s),Unnamed: 10,link
+s21+,235,3564.0,0.0659371492704826,3349,14.251063829787237,13396.0,,940.0,,,https://asicmarketplace.com/product/bitmain-antminer-s21-plus-bitcoin-miner/
 s21 Pro,245,3510.0,0.0698005698005698,4129,16.853061224489796,16516.0,,980.0,,,https://asicmarketplace.com/product/bitmain-antminer-s21-pro-btc-miner-234th/
-s21,200,3500.0,0.05714285714285714,2699,13.495,,16194.0,,1200.0,,https://asicmarketplace.com/product/bitmain-antminer-s21-bitcoin-asic-miner/
-m66,276,5492.4,0.05025125628140704,3615,13.097826086956522,,21690.0,,1656.0,,
+s21,269,3510.0,0.0571428571428571,2699,13.495,,16194.0,,1200.0,,https://asicmarketplace.com/product/bitmain-antminer-s21-bitcoin-asic-miner/
+m66,276,5492.4,0.050251256281407,3615,13.097826086956522,,21690.0,,1656.0,,

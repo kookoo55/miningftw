@@ -27,7 +27,6 @@ jobs:
       - name: Package CSVs
         run: |
           mkdir -p data/packages
-          # Always write to the same path to avoid repo bloat
           (cd data && zip -r ../data/packages/data_csvs.zip . -i "**/*.csv")
           ls -lah data/packages
 
@@ -40,9 +39,5 @@ jobs:
           title: "chore: update data CSV ZIP"
           commit-message: "chore: update data CSV ZIP (auto)"
           body: |
-            This PR was auto-created by the workflow to commit the latest `data/**/*.csv` bundle:
-            - `data/packages/data_csvs.zip`
-          labels: |
-            automation
-            data
+            Auto-created PR to bundle `data/**/*.csv` as `data/packages/data_csvs.zip`.
           delete-branch: true

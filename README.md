@@ -1,14 +1,16 @@
 # miningftw
 
-Forecasting & analysis for a winter-only BTC/ETC mining setup.  
+Forecasting & analysis for a winter-only BTC/ETC mining setup. It does not support calculations for BTC & ETC mining together. 
 This repo stores canonical miner sheets, a monthly model generator, and CI that snapshots data for easy verification.
 
-## What’s new
-- The model **always reads miner specs (hashrate & power) from the CSVs** for the selected model names:
-  - BTC: `config/assumptions.json` → `btc.model_name` (e.g., `"s21+"`) pulled from `data/btc_miner_sheet.csv`
-  - ETC: `config/assumptions.json` → `etc.model_name` (e.g., `"jasminer x4-q"`) pulled from `data/etc_miner_sheet.csv`
-- **Unit counts** (how many miners) still come from `config/assumptions.json` (`btc.units`, `etc.units`).
-- Optional difficulty-aware mining: set `use_difficulty=true` and provide `difficulty_now`, `block_time_s`, `block_reward`, and `pool_fee_pct` in assumptions to compute coins/day from first principles (no web calls).
+## How it works
+1) For each chain, the script **finds the row** where `model` equals the `model_name` in assumptions (case-insensitive).  
+2) It **extracts per‑unit hashrate and power** from the CSV (TH/s for BTC, GH/s for ETC).  
+3) It computes **coins/day**:
+   - If `use_difficulty=true`: coins/day = (miner_share × blocks/day × block_reward) × (1−pool_fee)
+   - Then applies **annual difficulty %** (harder → fewer coins) and winter-only schedule.
+4) Prices can grow per year via `annual_price_pct`. Electricity rate can grow via `annual_power_pct`.  
+5) Sales are recognized with a **12‑month lag** (`sell_lag_months`) to target LTCG.
 
 ## Repo layout
 ```
@@ -26,7 +28,14 @@ scripts/
   build_monthly_model.py
 ```
 
+## Run
+```bash
+python3 scripts/build_monthly_model.py
+# writes data/monthly_model_2025_2030_full.csv
+```
+
 ## Assumptions (keys)
+### Below are the default values used in the calculations.
 ```json
 {
   "start_month": "2025-10",
@@ -62,19 +71,4 @@ scripts/
     "source_csv": "data/etc_miner_sheet.csv"
   }
 }
-```
-
-## How it works
-1) For each chain, the script **finds the row** where `model` equals the `model_name` in assumptions (case-insensitive).  
-2) It **extracts per‑unit hashrate and power** from the CSV (TH/s for BTC, GH/s for ETC).  
-3) It computes **coins/day**:
-   - If `use_difficulty=true`: coins/day = (miner_share × blocks/day × block_reward) × (1−pool_fee)
-   - Then applies **annual difficulty %** (harder → fewer coins) and winter-only schedule.
-4) Prices can grow per year via `annual_price_pct`. Electricity rate can grow via `annual_power_pct`.  
-5) Sales are recognized with a **12‑month lag** (`sell_lag_months`) to target LTCG.
-
-## Run
-```bash
-python scripts/build_monthly_model.py
-# writes data/monthly_model_2025_2030_full.csv
 ```

@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 
 def build_cash(assumptions: dict, repo_root: Path) -> pd.DataFrame:
-    monthly_path = repo_root / "data" / "monthly_model_2025_2030_full.csv"
+    monthly_path = repo_root / "data" / "monthly_model_2025_2030.csv"
     if not monthly_path.exists():
         raise SystemExit(f"Missing monthly model CSV: {monthly_path}")
     df = pd.read_csv(monthly_path)

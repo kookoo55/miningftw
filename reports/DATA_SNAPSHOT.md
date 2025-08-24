@@ -34,7 +34,7 @@
 | jasminer x16 p | 5.8 | 1900 | 0.0030526315789473684 | 4269 | 736.0344827586207 |  |  |  |  |  | https://asicmarketplace.com/product/jasminer-x16-p-etc-miner-8gb/?attribute_delivery-batch=In+Stock&stkn=bf611f03bd0c&variant=17574&utm_medium=cpc&utm_source=google&utm_campaign=Google%20Shopping&gad_source=1&gad_campaignid=22668882941&gbraid=0AAAAA__Viad3KDJwnHK6FZA1VcipeTGbR&gclid=Cj0KCQjwqqDFBhDhARIsAIHTlksIOFMcEL72ma80u4C-Y1Vw5iqaf1fqtBGLfIJbBnAzY78VpcA1EUwaAh89EALw_wcB |
 | jasminer x4-q | 1.04 | 370 | 0.002810810810810811 | 829 | 797.1153846153846 |  |  |  |  |  | https://asicmarketplace.com/product/jasminer-x4-q-etc-miner-5gb-1040mh/?attribute_delivery-batch=In+Stock&stkn=bf611f03bd0c&variant=13826&utm_medium=cpc&utm_source=google&utm_campaign=Google%20Shopping&srsltid=AfmBOorn2deUshzlgCXVwxk_k433LFgdfHfVqLa7aZ3ithqY6E4ltoyrLOY |
 
-## `data/monthly_model_2025_2030_full.csv`
+## `data/monthly_model_2025_2030.csv`
 
 - Rows: **63**
 - SHA256: `ca377577ef7caab6ac0d95be6476997e60d480afd04d82c5e417dc5a88fb9653`

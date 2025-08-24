@@ -30,12 +30,19 @@ scripts/
 
 ## Run
 ```bash
-python3 scripts/build_monthly_model.py
-# writes data/monthly_model_2025_2030_full.csv
+python scripts/build_monthly_model.py
+# writes data/monthly_model_2025_2030.csv
+
+python scripts/build_annual_pnl_accrual.py
+# writes data/annual_pnl_accrual.csv
+
+python scripts/build_annual_pnl_cash.py
+# writes data/annual_pnl_cash.csv
 ```
 
 ## Assumptions (keys)
-### Below are the default values used in the calculations.
+Below are the default values used in the calculations. Tweak these values to adjust the calculations and then run the scripts again. 
+
 ```json
 {
   "start_month": "2025-10",

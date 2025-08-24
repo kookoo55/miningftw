@@ -14,18 +14,31 @@ This repo stores canonical miner sheets, a monthly model generator, and CI that 
 
 ## Repo layout
 ```
-data/
-  btc_miner_sheet.csv
-  etc_miner_sheet.csv
-  packages/
-    data_csvs.zip
-    manifest.json
-reports/
-  DATA_SNAPSHOT.md
-config/
-  assumptions.json
-scripts/
-  build_monthly_model.py
+miningftw/
+├─ .github/
+│  └─ workflows/
+│     ├─ data-snapshot (PR auto-merge)  # CI that writes reports/DATA_SNAPSHOT.md + data/packages/*
+│     └─ (other workflow files)
+├─ config/
+│  └─ assumptions.json                  # single source of truth for model knobs
+├─ data/
+│  ├─ btc_miner_sheet.csv               # BTC specs (TH/s, W, price, link)
+│  ├─ etc_miner_sheet.csv               # ETC specs (GH/s, W, price, link)
+│  ├─ monthly_model_2025_2030_full.csv  # winter-only monthly model (always same name)
+│  ├─ annual_pnl_accrual.csv            # built by scripts/build_annual_pnl_accrual.py
+│  ├─ annual_pnl_cash.csv               # built by scripts/build_annual_pnl_cash.py (captures 2031)
+│  └─ packages/
+│     ├─ data_csvs.zip                  # zipped CSVs for portability
+│     └─ manifest.json                  # headers, row counts, samples, sha256
+├─ reports/
+│  └─ DATA_SNAPSHOT.md                  # human-readable snapshot (from CI)
+├─ scripts/
+│  ├─ build_monthly_model.py            # reads CSV specs + assumptions; overwrites monthly_model_2025_2030.csv
+│  ├─ build_annual_pnl_accrual.py       # writes data/annual_pnl_accrual.csv
+│  └─ build_annual_pnl_cash.py          # writes data/annual_pnl_cash.csv
+├─ .gitignore
+├─ README.md
+└─ requirements.txt
 ```
 
 ## Run

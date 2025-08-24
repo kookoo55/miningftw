@@ -1,7 +1,12 @@
 # ⛏️🔌⛏️ miningftw ⛏️🔌⛏️
 
-Forecasting & analysis for a winter-only BTC/ETC mining setup. It does not support calculations for BTC & ETC mining together. 
-This repo stores canonical miner sheets, a monthly model generator, and CI that snapshots data for easy verification.
+Forecasting & analysis for a winter-only BTC/ETC mining setup. It does not support calculations for BTC & ETC mining together. This repo stores a monthly model generator.
+
+[[Summary PDF with charts](reports/miningftw_deck_latest.pdf)]
+There are three scenarios in this PDF
+1) BTC mining only 2025-2030
+2) ETC mining only 2025-2030
+3) Coin comparison 2025-2030
 
 ## Repo layout
 
@@ -24,7 +29,7 @@ miningftw/
 │     └─ manifest.json                  # headers, row counts, samples, sha256
 ├─ reports/
 │  └─ DATA_SNAPSHOT.md                  # human-readable snapshot (from CI)
-│  └─ miningftw_annual_insights_v1.pdf  # chatgpt generated summary
+│  └─ miningftw_*.pdf                   # chatgpt generated summary
 ├─ scripts/
 │  ├─ build_monthly_model.py            # reads CSV specs + assumptions; overwrites monthly_model_2025_2030.csv
 │  ├─ build_annual_pnl_accrual.py       # writes data/annual_pnl_accrual.csv
@@ -35,8 +40,9 @@ miningftw/
 ```
 ## Main Scenario 
 
-1) Winter and summer months are specified because electricity rates are cheaper in the winter months.
-2) Mining operates at 100% during winter months and 0% during summer months.
+1) Years 2025-2030
+2) Winter and summer months mining only because electricity rates are cheaper in the winter months.
+3) Mining operates at 100% during winter months and 0% during summer months.
 
 ## How it works
 
@@ -48,11 +54,8 @@ miningftw/
 ## Algo
 1) For each coin, the script **finds the row** where `model` equals the `model_name` in assumptions (case-insensitive).  
 2) It **extracts per‑unit hashrate and power** from the CSV (TH/s for BTC, GH/s for ETC).  
-3) It computes **coins/day**:
-   - If `use_difficulty=true`: coins/day = (miner_share × blocks/day × block_reward) × (1−pool_fee)
-   - Then applies **annual difficulty %** (harder → fewer coins) and winter-only schedule.
-4) Prices can grow per year via `annual_price_pct`. Electricity rate can grow via `annual_power_pct`.  
-5) Sales are recognized with a **12‑month lag** (`sell_lag_months`) to target LTCG.
+3) It computes **coins/day**
+4) Sales are recognized with a **12‑month lag** (`sell_lag_months`) to target LTCG.
 
 ## Assumptions (keys)
 
@@ -64,7 +67,6 @@ Defaults worth calling out:
   - Miners are not overclocked.
 - Calcuations do not include power from PDU, immmersion tank, dry cooler, etc.
 - `annual_price_pct: 0.0` because I wanted to calculate a base case scenario where coin prices does not increase over the next 5-6 years.
-- Some values such as `difficulty_now` are fetched from the internet during the script.
 - Pool fee is set at 1%.
 - Bitcoin halving in 2028-03-16 is not included in calculations for simplicity. 
 

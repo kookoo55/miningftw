@@ -1,10 +1,16 @@
 # scripts/build_monthly_model.py
-# Writes data/monthly_model_2025_2030.csv using config/assumptions.json
-# Miner specs always read from CSVs; network share = my_hash / network_hashrate (H/s)
+# Builds data/monthly_model_2025_2030.csv from config/assumptions.json
+# - Always reads miner specs from CSVs
+# - Uses explicit network hashrate (supports "600 EH/s", "120TH/s", raw H/s)
+# - Winter-only mining (months list), 12-month cash sale lag
+# - Validates required inputs; rounds $ to 2 decimals, others to 6
+# - Adds btc_price_used / etc_price_used columns
 
 import json
 import pandas as pd
 from pathlib import Path
+
+# ---------- Utils
 
 def _days_in_month(dt: pd.Timestamp) -> int:
     eom = dt + pd.offsets.MonthEnd(0)
@@ -12,8 +18,8 @@ def _days_in_month(dt: pd.Timestamp) -> int:
 
 def _parse_hashrate(value):
     """
-    Accepts numeric H/s, or strings like:
-      "1.04 GH/s", "120 TH/s", "95 PH/s", "600 EH/s", or "1e14"
+    Accepts numeric H/s or strings like:
+      "1.04 GH/s", "120 TH/s", "95PH/s", "600EH/s", "1e14", "120TH"
     Returns raw H/s (float).
     """
     if value is None:
@@ -22,15 +28,25 @@ def _parse_hashrate(value):
         return float(value)
 
     s = str(value).strip().lower()
-    # split number vs unit
-    num = None
+    # Normalize unit tokens: remove spaces and common suffixes
+    s = s.replace(" ", "")
+    # Split numeric prefix and unit suffix
+    num_str, unit = "", ""
     for i, ch in enumerate(s):
         if ch not in "0123456789.+-e":
-            num = float(s[:i])
-            unit = s[i:].replace("/s", "").replace("h/s", "").strip()
+            num_str = s[:i]
+            unit = s[i:]
             break
-    if num is None:
-        return float(s)  # numeric-like string without unit
+    if num_str == "":
+        # Might be a pure number like "1e14"
+        try:
+            return float(s)
+        except Exception as e:
+            raise ValueError(f"Unrecognized hashrate format: {value}") from e
+
+    # Strip /s and h/s variants
+    unit = unit.replace("/s", "").replace("h/s", "").replace("hs", "")
+    num = float(num_str)
 
     if unit.startswith("gh"):
         return num * 1e9
@@ -40,8 +56,16 @@ def _parse_hashrate(value):
         return num * 1e15
     if unit.startswith("eh"):
         return num * 1e18
-    if unit in ("", "h", "hs"):
-        return float(num)
+    if unit in ("", "h"):
+        return num
+    # Handle forms like "ghs", "ths", "phs", "ehs"
+    if unit.endswith("s"):
+        core = unit[:-1]
+        if core == "gh": return num * 1e9
+        if core == "th": return num * 1e12
+        if core == "ph": return num * 1e15
+        if core == "eh": return num * 1e18
+
     raise ValueError(f"Unknown hashrate unit: {value}")
 
 def _fleet_hashrate_hs(units: int, per_unit_hash: float, unit_kind: str) -> float:
@@ -52,16 +76,16 @@ def _fleet_hashrate_hs(units: int, per_unit_hash: float, unit_kind: str) -> floa
     elif kind.startswith("GH"):
         per_hs = float(per_unit_hash) * 1e9
     else:
-        per_hs = float(per_unit_hash)  # assume already H/s if unspecified
+        per_hs = float(per_unit_hash)  # assume already H/s
     return float(units) * per_hs
 
 def _extract_specs(csv_path: Path, model_name: str):
-    """Read (per-unit hashrate, unit kind, power W) from a CSV row matching model_name (case-insensitive)."""
+    """Read (per-unit hashrate, unit kind, power W) for matching model_name (case-insensitive)."""
     if not csv_path.exists():
         raise FileNotFoundError(f"CSV not found: {csv_path}")
     df = pd.read_csv(csv_path)
 
-    # model column
+    # Find model column
     model_col = None
     for c in df.columns:
         if str(c).strip().lower() == "model":
@@ -72,11 +96,13 @@ def _extract_specs(csv_path: Path, model_name: str):
 
     mask = df[model_col].astype(str).str.strip().str.lower() == model_name.strip().lower()
     if not mask.any():
-        raise ValueError(f"Model '{model_name}' not found in {csv_path.name}. "
-                         f"Available: {df[model_col].dropna().astype(str).tolist()}")
+        raise ValueError(
+            f"Model '{model_name}' not found in {csv_path.name}. "
+            f"Available: {df[model_col].dropna().astype(str).tolist()}"
+        )
     row = df.loc[mask].iloc[0]
 
-    # hashrate column + unit
+    # Hashrate column + unit kind
     hr_col, unit_kind = None, None
     for c in df.columns:
         cl = str(c).lower()
@@ -92,7 +118,7 @@ def _extract_specs(csv_path: Path, model_name: str):
     if hr_col is None:
         raise ValueError(f"No hashrate column found in {csv_path.name}")
 
-    # power (W)
+    # Power (W)
     pwr_col = None
     for c in df.columns:
         if "power" in str(c).lower() and "(w" in str(c).lower():
@@ -105,17 +131,46 @@ def _extract_specs(csv_path: Path, model_name: str):
     power_w_each = float(row[pwr_col])
     return per_unit_hash, unit_kind, power_w_each
 
+def _validate_chain_conf(name: str, c: dict):
+    """Required field checks & basic sanity."""
+    required = [
+        "model_name", "units", "source_csv",
+        "network_hashrate", "block_time_s", "block_reward", "base_price_usd"
+    ]
+    missing = [k for k in required if k not in c]
+    if missing:
+        raise ValueError(f"{name}: missing required fields {missing}")
+    if int(c["units"]) <= 0:
+        raise ValueError(f"{name}: units must be > 0")
+    if float(c["block_time_s"]) <= 0:
+        raise ValueError(f"{name}: block_time_s must be > 0")
+    if float(c["block_reward"]) < 0:
+        raise ValueError(f"{name}: block_reward must be >= 0")
+    if float(c["base_price_usd"]) < 0:
+        raise ValueError(f"{name}: base_price_usd must be >= 0")
+    if _parse_hashrate(c["network_hashrate"]) <= 0:
+        raise ValueError(f"{name}: network_hashrate must be > 0")
+
 def _coins_per_day(conf: dict, units: int, per_unit_hash: float, unit_kind: str) -> float:
     """Coins/day from network share, blocks/day, reward, minus pool fee."""
     net_hs  = _parse_hashrate(conf["network_hashrate"])   # H/s
     my_hs   = _fleet_hashrate_hs(units, per_unit_hash, unit_kind)
+    if my_hs > net_hs:
+        # Not fatal, but likely misconfigured inputs
+        raise ValueError(
+            f"{conf.get('model_name','miner')}: fleet hashrate ({my_hs:.3e} H/s) "
+            f"> network hashrate ({net_hs:.3e} H/s). Check assumptions."
+        )
     share   = 0.0 if net_hs <= 0 else (my_hs / net_hs)
     blocks_per_day = 86400.0 / float(conf["block_time_s"])
     reward  = float(conf["block_reward"])
     fee     = float(conf.get("pool_fee_pct", 0.0))
     return share * blocks_per_day * reward * (1.0 - fee)
 
+# ---------- Builder
+
 def build_monthly_model(assumptions: dict, repo_root: Path) -> pd.DataFrame:
+    # Global
     start = pd.Timestamp(assumptions["start_month"] + "-01")
     end   = pd.Timestamp(assumptions["end_month"] + "-01") + pd.offsets.MonthEnd(0)
     months = pd.period_range(start=start, end=end, freq="M")
@@ -128,6 +183,10 @@ def build_monthly_model(assumptions: dict, repo_root: Path) -> pd.DataFrame:
     btc = assumptions["btc"]
     etc = assumptions["etc"]
 
+    # Validate chain configs
+    _validate_chain_conf("btc", btc)
+    _validate_chain_conf("etc", etc)
+
     # Miner specs (always from CSVs)
     btc_hash, btc_unit_kind, btc_power_each = _extract_specs(repo_root / btc["source_csv"], btc["model_name"])
     etc_hash, etc_unit_kind, etc_power_each = _extract_specs(repo_root / etc["source_csv"], etc["model_name"])
@@ -135,15 +194,15 @@ def build_monthly_model(assumptions: dict, repo_root: Path) -> pd.DataFrame:
     btc_units = int(btc["units"])
     etc_units = int(etc["units"])
 
-    # Prices & growth
+    # Economics knobs
     btc_price0 = float(btc["base_price_usd"])
     etc_price0 = float(etc["base_price_usd"])
     btc_price_growth = float(btc.get("annual_price_pct", 0.0))
     etc_price_growth = float(etc.get("annual_price_pct", 0.0))
-    btc_diff_growth  = float(btc.get("annual_difficulty_pct", 0.0))  # optional difficulty growth knob
+    btc_diff_growth  = float(btc.get("annual_difficulty_pct", 0.0))
     etc_diff_growth  = float(etc.get("annual_difficulty_pct", 0.0))
 
-    # Baseline daily coins from network hashrate
+    # Baseline daily coins from network hashrate share
     btc_day0 = _coins_per_day(btc, btc_units, btc_hash, btc_unit_kind)
     etc_day0 = _coins_per_day(etc, etc_units, etc_hash, etc_unit_kind)
 
@@ -155,7 +214,7 @@ def build_monthly_model(assumptions: dict, repo_root: Path) -> pd.DataFrame:
         btc_price = btc_price0 * ((1.0 + btc_price_growth) ** year_index)
         etc_price = etc_price0 * ((1.0 + etc_price_growth) ** year_index)
 
-        # scale coins/day by user difficulty growth (if you use it)
+        # scale coins/day by user difficulty growth (if provided)
         btc_day   = btc_day0 / ((1.0 + btc_diff_growth) ** year_index)
         etc_day   = etc_day0 / ((1.0 + etc_diff_growth) ** year_index)
 
@@ -200,15 +259,38 @@ def build_monthly_model(assumptions: dict, repo_root: Path) -> pd.DataFrame:
             "etc_kwh": etc_kwh,
             "btc_power_cost": btc_pow,
             "etc_power_cost": etc_pow,
+            "btc_price_used": btc_price,
+            "etc_price_used": etc_price,
             "btc_cash_sales": 0.0,  # filled below by lag
             "etc_cash_sales": 0.0
         })
 
     df = pd.DataFrame(rows).sort_values("period").reset_index(drop=True)
-    # Cash sales lag (months)
+
+    # Apply cash sale lag
     df["btc_cash_sales"] = df["btc_revenue_accrual"].shift(sell_lag).fillna(0.0)
     df["etc_cash_sales"] = df["etc_revenue_accrual"].shift(sell_lag).fillna(0.0)
+
+    # ---------- Rounding rules
+    # Money fields: 2 decimals; other numeric floats: 6 decimals
+    money_cols = [
+        "btc_revenue_accrual", "etc_revenue_accrual",
+        "btc_power_cost", "etc_power_cost",
+        "btc_cash_sales", "etc_cash_sales",
+        "btc_price_used", "etc_price_used"
+    ]
+    for c in money_cols:
+        if c in df.columns:
+            df[c] = df[c].round(2)
+
+    float_cols = df.select_dtypes(include="float").columns.tolist()
+    for c in float_cols:
+        if c not in money_cols:
+            df[c] = df[c].round(6)
+
     return df
+
+# ---------- CLI
 
 if __name__ == "__main__":
     repo_root = Path(".")

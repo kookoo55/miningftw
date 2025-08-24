@@ -13,4 +13,3 @@ venv/
 
 # Reports cache
 reports/*.html
-reports/*.pdf

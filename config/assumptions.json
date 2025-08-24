@@ -14,7 +14,7 @@
   "elec_rate_usd_per_kwh": 0.081,
   "annual_power_pct": 0.0,
   "btc": {
-    "model_name": "s21+",
+    "model_name": "s21",
     "base_price_usd": 125000.0,
     "annual_price_pct": 0.0,
     "use_difficulty": true,

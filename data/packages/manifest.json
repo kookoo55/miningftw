@@ -127,7 +127,7 @@
       ]
     },
     {
-      "path": "data/monthly_model_2025_2030_full.csv",
+      "path": "data/monthly_model_2025_2030.csv",
       "sha256": "ca377577ef7caab6ac0d95be6476997e60d480afd04d82c5e417dc5a88fb9653",
       "headers": [
         "period",

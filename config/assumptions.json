@@ -1,42 +1,34 @@
 {
   "start_month": "2025-10",
-  "end_month": "2030-12",
-  "winter_months": [
-    10,
-    11,
-    12,
-    1,
-    2,
-    3,
-    4
-  ],
+  "end_month": "2030-04",
+  "winter_months": [10,11,12,1,2,3,4],
   "sell_lag_months": 12,
   "elec_rate_usd_per_kwh": 0.081,
   "annual_power_pct": 0.0,
+
   "btc": {
     "model_name": "s21",
-    "base_price_usd": 125000.0,
-    "annual_price_pct": 0.0,
-    "use_difficulty": true,
-    "difficulty_now": 86000000000000.0,
-    "annual_difficulty_pct": 0.0,
-    "block_time_s": 600.0,
+    "units": 6,
+    "source_csv": "data/btc_miner_sheet.csv",
+    "network_hashrate": "600 EH/s",
+    "block_time_s": 600,
     "block_reward": 3.125,
     "pool_fee_pct": 0.01,
-    "units": 6,
-    "source_csv": "data/btc_miner_sheet.csv"
+    "base_price_usd": 125000,
+    "annual_price_pct": 0.0,
+    "annual_difficulty_pct": 0.0
   },
+
   "etc": {
     "model_name": "jasminer x4-q",
-    "base_price_usd": 24.0,
-    "annual_price_pct": 0.0,
-    "use_difficulty": true,
-    "difficulty_now": 170000000000000.0,
-    "annual_difficulty_pct": 0.0,
+    "units": 20,
+    "source_csv": "data/etc_miner_sheet.csv",
+    "network_hashrate": "120 TH/s",
     "block_time_s": 13.5,
     "block_reward": 2.56,
     "pool_fee_pct": 0.01,
-    "units": 20,
-    "source_csv": "data/etc_miner_sheet.csv"
+    "base_price_usd": 24,
+    "annual_price_pct": 0.0,
+    "annual_difficulty_pct": 0.0
   }
 }

@@ -42,7 +42,7 @@ miningftw/
 ## Main Scenario 
 
 1) Years 2025-2030
-2) Winter and summer months mining only because electricity rates are cheaper in the winter months.
+2) Winter months mining only because electricity rates are cheaper in the winter months.
 3) Mining operates at 100% during winter months and 0% during summer months.
 
 ## How it works

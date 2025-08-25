@@ -7,7 +7,7 @@ Forecasting & analysis for a winter-only BTC/ETC mining setup. It does not suppo
 There are three scenarios in this PDF:
 1) BTC mining only 2025-2030
 2) ETC mining only 2025-2030
-3) Coin comparison 2025-2030
+3) BTC vs ETC 2025-2030
 
 ## Repo layout
 

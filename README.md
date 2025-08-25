@@ -110,6 +110,8 @@ Defaults worth calling out:
 
 ## Run
 
+:heavy_exclamation_mark: Always run the monthly model script first.
+
 ```bash
 python scripts/build_monthly_model.py
 # writes data/monthly_model_2025_2030.csv

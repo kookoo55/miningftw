@@ -3,7 +3,8 @@
 Forecasting & analysis for a winter-only BTC/ETC mining setup. It does not support calculations for BTC & ETC mining together. This repo stores a monthly model generator.
 
 [[Summary PDF with charts](reports/miningftw_deck_latest.pdf)]
-There are three scenarios in this PDF
+
+There are three scenarios in this PDF:
 1) BTC mining only 2025-2030
 2) ETC mining only 2025-2030
 3) Coin comparison 2025-2030
